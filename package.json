@@ -1,0 +1,42 @@
+{
+  "name": "uniswap-v3",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/yuichiroaoki/solidity-examples.git",
+  "author": "@starcodesAfrica <emmanuelonwukaazu@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "yarn clean && yarn compile",
+    "clean": "npx hardhat clean",
+    "compile": "npx hardhat compile",
+    "accounts": "npx hardhat accounts",
+    "balance": "npx hardhat balance --account",
+    "block-number": "npx hardhat block-number",
+    "deploy": "npx hardhat deploy --tags AaveUniQuick",
+    "swap": "npx hardhat run scripts/swap.js",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "lint": "solhint 'contracts/*.sol'",
+    "lint:fix": "solhint 'contracts/**/*.sol' --fix",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@chainlink/contracts": "^0.4.0",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
+    "@nomiclabs/hardhat-etherscan": "^3.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^4.6.0",
+    "@uniswap/v3-core": "^1.0.0",
+    "@uniswap/v3-periphery": "^1.1.1",
+    "chai": "^4.3.4",
+    "dotenv": "^16.0.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.5.1",
+    "hardhat": "^2.9.1",
+    "hardhat-contract-sizer": "^2.4.0",
+    "hardhat-deploy": "^0.9.29",
+    "hardhat-gas-reporter": "^1.0.7",
+    "solhint": "^3.3.6",
+    "solidity-coverage": "^0.7.13"
+  }
+}
