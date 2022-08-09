@@ -2,7 +2,7 @@
   "name": "uniswap-v3",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/yuichiroaoki/solidity-examples.git",
+  "repository": "https://github.com/Genius2021/Aave-V3--Uniswap-V3--Quickswap.git",
   "author": "@starcodesAfrica <emmanuelonwukaazu@gmail.com>",
   "license": "MIT",
   "scripts": {
