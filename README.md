@@ -1,8 +1,9 @@
 # Flash Swap Example
+
 Example of Flash Swaps involving
 1. Aave
 2. Uniswap
-3. Kyber
+3. Quickswap
 4. Sushiswap
 
 ## Installation and Setup
@@ -19,12 +20,16 @@ git clone repo clone link
 Right now this repo only works with hardhat mainnet fork.
 
 ### 1. Setup Environment Variables
-You'll need an ALCHEMY_MAINNET_RPC_URL environment variable.
+You'll need an ALCHEMY_API_KEY environment variable for polygon chain.
 
 Then, you can create a .env file with the following.
 
 ```
-ALCHEMY_MAINNET_RPC_URL='<your-own-alchemy-mainnet-rpc-url>'
+ALCHEMY_API_KEY='<your-own-alchemy-mainnet-rpc-url>'
+```
+
+```
+PRIVATE_KEY='<your-own-private-key>'
 ```
 
 ### 2. Install Dependencies
@@ -36,13 +41,13 @@ npm install
 ### 3. Compile Smart Contracts
 Run the following command.
 ```console
-npm compile
+npm run compile
 ```
 
 ### 4. Execute Flash Swaps 🔥
 Run the following command.
 ```console
-npm run flashswaps
+npm run swap
 ```
 
 
