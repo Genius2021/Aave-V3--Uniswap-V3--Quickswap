@@ -78,9 +78,10 @@ module.exports = {
       chainId: 31337 //This is the same with the hardhat runtime
     },
     hardhat: {
+      chainId: 31337,
       forking: {
         url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-        blockNumber: 12975788
+        blockNumber: 31744248
       }
     }
   },

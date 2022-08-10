@@ -11,35 +11,41 @@ const pool2Fee = 500;
 
 //Aave
 const borrow_token = networkConfig[chainId]["WBTC"];
+const DECIMALS = 8
+borrow_amount = "60"   //A string
 
 //Uniswap...The second token in the uniswap borrow pool
 const pool_pair = networkConfig[chainId]["Weth9"];
 const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
 
-const aave_borrow_amount = ethers.utils.parseEther("60");
+// const aave_borrow_amount = ethers.utils.parseEther("0.00000000000000005");
+const aave_borrow_amount = ethers.utils.parseUnits(borrow_amount, DECIMALS);
 const isUniUniQuick = false;
 const isUniQuick = false;
 const isUniSushi = false;
 const isQuickUni = false;
-const isQuickSushi = true;
+const isQuickSushi = false;
 const isSushiUni = false;
-const isSushiQuick = false;
+const isSushiQuick = true;
 
 async function main() {
+
+	// let deployedContractAddress = "0x0d51a0aa274925b43367e77cb063f3405f469ddf"
 	//const [account0] = await ethers.getSigners(); //Gets the accounts array for each network..Also works
 	const {deployer} = await getNamedAccounts();
 	//This is one of the ways where hardhat-deploy is important.
 	// deployments.fixtures(["all"])
 	//getContract gives us the most recent deployment of a specified contract
 	const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
+	// const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
 
 
 	//Get beginning balance of token you want to flashloan
-	// let contract = await ethers.getContractAt("IERC20", borrow_token);
+	let contract = await ethers.getContractAt("IERC20", borrow_token);
 
-	// const initialBalance = await contract.balanceOf(AaveUniQuickContract.address)
-	// console.log("Contract's initial balance is: ", initialBalance)
+	const initialBalance = await contract.balanceOf(AaveUniQuickContract.address)
+	console.log("Contract's initial balance is: ", initialBalance.toString())
 
 	const flashparams = {
 		token0: ethers.utils.getAddress(borrow_token), 
@@ -62,8 +68,8 @@ async function main() {
 	// tx.wait(1)
 
 	//Get ending balance of token you want to flashloan
-	// const endingBalance = await contract.balanceOf(AaveUniQuickContract.address)
-	// console.log("Contract's ending balance is: ", endingBalance)
+	const endingBalance = await contract.balanceOf(AaveUniQuickContract.address)
+	console.log("Contract's ending balance is: ", endingBalance.toString())
 
 	// //  // 1 ether = 1 * 10^18 wei 
 	// // console.log("flash gas ether: ", tx.gasPrice.toNumber() / 1e18)

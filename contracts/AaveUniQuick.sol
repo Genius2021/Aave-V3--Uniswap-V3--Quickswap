@@ -9,6 +9,7 @@ import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
 
@@ -64,57 +65,57 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
 
 
     function executeOperation(
-            address[] calldata assets,
-            uint256[] calldata amounts,
-            uint256[] calldata premiums,
-            address /* initiator */,
-            bytes calldata params 
-        )
-            external
-            override
-            returns (bool)
+        address[] calldata assets,
+        uint256[] calldata amounts,
+        uint256[] calldata premiums,
+        address /* initiator */,
+        bytes calldata params 
+    )
+        external
+        override
+        returns (bool)
         {
 
-            address borrowedAsset = assets[0];
-            uint borrowedAmount = amounts[0];
-            uint premium = premiums[0];
+        address borrowedAsset = assets[0];
+        uint borrowedAmount = amounts[0];
+        uint premium = premiums[0];
             
-            // This contract now has the funds requested.
-            // Your logic goes here.
-            require(msg.sender == address(POOL), "Not pool");
-            uint256 tokenBalance = IERC20(borrowedAsset).balanceOf(address(this));
-            require(borrowedAmount > 0, "Zero balance");
-            require(tokenBalance == borrowedAmount, "tokenBalance error!");
-            emit AaveBorrowDetails(borrowedAsset, borrowedAmount, premium);
+        // This contract now has the funds requested.
+        // Your logic goes here.
+        require(msg.sender == address(POOL), "Not pool");
+        uint256 tokenBalance = IERC20(borrowedAsset).balanceOf(address(this));
+        require(borrowedAmount > 0, "Zero balance");
+        require(tokenBalance == borrowedAmount, "tokenBalance error!");
+        console.log("Successfully received flashloan asset %s for %s and premium is %s", borrowedAsset, borrowedAmount, premium);
 
-            (FlashParams memory decoded) = abi.decode(params, (FlashParams));
-            //If you borrowed from Aave, proceed to also start UniswapQuickswaps BUT this time, you
-            //have the borrowed asset from Aave in this contract.
-            startUniswapV3AndQuickSwaps(decoded);
+        emit AaveBorrowDetails(borrowedAsset, borrowedAmount, premium);
 
-            // At the end of your logic above, this contract owes
-            // the flashloaned amounts + premiums.
-            // Therefore ensure your contract has enough to repay
-            // these amounts.
+        (FlashParams memory decoded) = abi.decode(params, (FlashParams));
+        //If you borrowed from Aave, proceed to also start UniswapQuickswaps BUT this time, you
+        //have the borrowed asset from Aave in this contract.
+        startUniswapV3AndQuickSwaps(decoded);
+        console.log("About to pay back to Aave...");
+
+        // At the end of your logic above, this contract owes
+        // the flashloaned amounts + premiums.
+        // Therefore ensure your contract has enough to repay
+        // these amounts.
             
-            uint amountOwing = borrowedAmount + premium;
-            IERC20(borrowedAsset).approve(address(POOL), amountOwing);        
-            return true;
-        }
+        uint amountOwing = borrowedAmount + premium;
+        IERC20(borrowedAsset).approve(address(POOL), amountOwing);        
+        return true;
+    }
 
-
-        // Flash multiple assets 
-        // function flashloan(address[] memory assets, uint256[] memory amounts) public onlyOwner {
-        //     _flashloan(assets, amounts);
-        // }
-
-        /*
-        *  Flash loan 1,000,000,000,000,000,000 wei (1 ether) worth of `_asset`
-        */
-
+    /*
+    *  Flash loan 1,000,000,000,000,000,000 wei (1 ether) worth of `_asset`
+    */
     function startTransaction(FlashParams memory _data) public onlyOwner{
         address _borrowAsset = _data.token0;
         uint256 _borrowAmount = _data.amount0;
+
+        console.log("These are the passed in data...");
+        console.log("Borrowed asset: %s", _borrowAsset);
+        console.log("Borrowed amount: %s", _borrowAmount);
 
         bytes memory params = abi.encode(_data);
 
@@ -291,6 +292,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         uint24 poolFee
     ) internal returns (uint256 amountOut) {
         TransferHelper.safeApprove(inputToken, address(uniswapV3Router), amountIn);
+        console.log("Currently in swapOnUniswap function...");
         
             ISwapRouter.ExactInputSingleParams memory params = 
                 ISwapRouter.ExactInputSingleParams({
@@ -318,7 +320,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     address outputToken
     ) internal returns (uint256 amountOut) {
         TransferHelper.safeApprove(inputToken, address(uniswapV3Router), amountIn);
-        
+        console.log("Currently in multihopSwapOnUniswap function...");
+
         // Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and poolFees that define the pools used in the swaps.
         // The format for pool encoding is (tokenIn, fee, tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
         // Since we are swapping DAI to USDC and then USDC to WETH9 the path encoding is (DAI, 0.3%, USDC, 0.3%, WETH9).
@@ -350,6 +353,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     ) internal returns (uint256 amountOut) {
          //+-We allow the router of QuickSwapRouter to spend all our tokens that are neccesary in doing the trade:
         IERC20(inputToken).approve(address(quickRouter), amountIn);
+        console.log("Currently in swapOnQuickswap function...");
+
 
          //+-Array of the 2 Tokens Addresses:
         address[] memory path = new address[](2);
@@ -377,6 +382,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         );
 
         require(poolAddress != address(0), "Pool not found!");
+        console.log("Currently in startSushiswapV2 function...");
+
                 
         uint256 amountOut = _swapTokens(
             _amount,
