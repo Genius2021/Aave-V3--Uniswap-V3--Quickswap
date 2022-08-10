@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "./utils/FlashLoanSimpleReceiverBase.sol";
+import "./utils/FlashLoanReceiverBase.sol";
 import "./utils/Withdrawable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
@@ -10,8 +10,7 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
-
+contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
 
     //Note: Quickswap and Sushiswap are a fork of Uniswap. So the API are essentially the same.
     IUniswapV2Router02 public immutable quickRouter;
@@ -26,7 +25,7 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
     address _sushiswapfactory,
     address _quickswapV2RouterAddress
     ) 
-    FlashLoanSimpleReceiverBase(_aaveAddressProvider) {
+    FlashLoanReceiverBase(_aaveAddressProvider) {
         uniswapV3Router = ISwapRouter(_uniswapV3Router);
         quickRouter = IUniswapV2Router02(_quickswapV2RouterAddress);
         sushiswapRouterAddress = _sushiswapRouter;
@@ -63,10 +62,11 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
         uint256 _endAmount
     );
 
+
     function executeOperation(
-            address asset,
-            uint256 amount,
-            uint256 premium,
+            address[] calldata assets,
+            uint256[] calldata amounts,
+            uint256[] calldata premiums,
             address /* initiator */,
             bytes calldata params 
         )
@@ -74,11 +74,18 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
             override
             returns (bool)
         {
+
+            address borrowedAsset = assets[0];
+            uint borrowedAmount = amounts[0];
+            uint premium = premiums[0];
             
             // This contract now has the funds requested.
             // Your logic goes here.
             require(msg.sender == address(POOL), "Not pool");
-            emit AaveBorrowDetails(asset, amount, premium);
+            uint256 tokenBalance = IERC20(borrowedAsset).balanceOf(address(this));
+            require(borrowedAmount > 0, "Zero balance");
+            require(tokenBalance == borrowedAmount, "tokenBalance error!");
+            emit AaveBorrowDetails(borrowedAsset, borrowedAmount, premium);
 
             (FlashParams memory decoded) = abi.decode(params, (FlashParams));
             //If you borrowed from Aave, proceed to also start UniswapQuickswaps BUT this time, you
@@ -90,8 +97,8 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
             // Therefore ensure your contract has enough to repay
             // these amounts.
             
-            uint amountOwing = amount + premium;
-            IERC20(asset).approve(address(POOL), amountOwing);        
+            uint amountOwing = borrowedAmount + premium;
+            IERC20(borrowedAsset).approve(address(POOL), amountOwing);        
             return true;
         }
 
@@ -104,34 +111,50 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
         /*
         *  Flash loan 1,000,000,000,000,000,000 wei (1 ether) worth of `_asset`
         */
-        function startTransaction(FlashParams memory _data) public onlyOwner {
 
-            address _borrowAsset = _data.token0;
-            uint256 _borrowAmount = _data.amount0;
+    function startTransaction(FlashParams memory _data) public onlyOwner{
+        address _borrowAsset = _data.token0;
+        uint256 _borrowAmount = _data.amount0;
 
-            bytes memory params = abi.encode(_data);
+        bytes memory params = abi.encode(_data);
 
-            _flashloanSimple(_borrowAsset, _borrowAmount, params);
+        address[] memory assets = new address[](1);
+        assets[0] = _borrowAsset;
 
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = _borrowAmount;
+
+        _flashloan(assets, amounts, params);
+    }
+
+
+    function _flashloan(address[] memory assets, uint256[] memory amounts, bytes memory params) internal {
+
+        //We send the flashloan amount to this contract (receiverAddress) so we can make the arbitrage trade
+        address receiverAddress = address(this);
+
+        address onBehalfOf = address(this);
+        // bytes memory params = "";
+        uint16 referralCode = 0;
+
+        uint256[] memory modes = new uint256[](assets.length);
+
+        // 0 = no debt (flash), 1 = stable, 2 = variable
+        for (uint256 i = 0; i < assets.length; i++) {
+            modes[i] = 0;
         }
 
-        //This involves borrowing just one asset
-        function _flashloanSimple(address borrowAsset, uint256 borrowAmount, bytes memory params) internal {
-            //We send the flashloan amount to this contract (receiverAddress) so we can make the arbitrage trade
 
-            address receiverAddress = address(this);
-
-            uint16 referralCode = 0;
-
-            POOL.flashLoanSimple(
-                receiverAddress,
-                borrowAsset,
-                borrowAmount,
-                params,
-                referralCode
-            );
-
-        }
+        POOL.flashLoan(
+            receiverAddress,
+            assets,
+            amounts,
+            modes,
+            onBehalfOf,
+            params,
+            referralCode
+        );
+    }
 
         function startUniswapV3AndQuickSwaps(FlashParams memory params) internal {
 
@@ -164,9 +187,8 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
                 amountOut,
                 token1,   //input token
                 token0); //output token
-            }else{
-                return;
             }
+
 
             emit TokensSwapped(token0, amount, finalAmountOut);
         }
@@ -194,7 +216,7 @@ contract AaveUniQuick is FlashLoanSimpleReceiverBase, Withdrawable {
                 amount,
                 token0,  //input token
                 token1, //output token
-                pool1Fee //A different uniswap pool and pool fee tier. Despite being same tokens
+                pool1Fee 
             );
 
                            //From token1 => targetAsset

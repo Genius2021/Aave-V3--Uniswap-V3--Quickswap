@@ -62,7 +62,6 @@ module.exports = {
       chainId: 137,
       gas: 21000000,
       gasPrice: 35000000000, //35 gwei
-      // gasPrice: 47537193041,
       blockConfirmations: 5,
       saveDeployments: true
     },
