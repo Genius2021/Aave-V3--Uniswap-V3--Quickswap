@@ -37,7 +37,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     struct FlashParams {
         address token0; //Token to borrow from Aave
         address token1; //second token in the Uniswap borrow pool
-        uint24 pool1Fee; //Uniswap borrow pool fee tier...This is the fee tier for the pool I borrowed from (fee1...Which is the first pool)
+        uint24 pool1Fee; //Uniswap borrow pool fee tier
         uint256 amount0; //Aave borrow amount
         uint24 pool2Fee;
         address sharedAddress;

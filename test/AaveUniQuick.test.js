@@ -11,30 +11,29 @@ describe("AaveUniQuick", async () => {
 	let owner;
 
 	const provider = ethers.provider;
-    
-    // 	token0 = new ethers.Contract(swapTokenAddress, IERC20.abi, provider)
-    // 	token1 = new ethers.Contract(baseTokenAddress, IERC20.abi, provider)
-const borrow_token = networkConfig[chainId]["WBTC"];
-const DECIMALS = 8
-const aave_borrow_amount = "100.0";
-const pool_pair = networkConfig[chainId]["Weth9"];
-const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
-const flashParams = {
-    token0: ethers.utils.getAddress(borrow_token),
-    token1: ethers.utils.getAddress(pool_pair),
-    pool1Fee: pool1Fee,
-    amount0: ethers.utils.parseUnits(aave_borrow_amount, DECIMALS),
-    pool2Fee: pool2Fee,
-    sharedAddress: ethers.utils.getAddress(shared_Address),
-    uniuniquick: false,
-    uniquick: false,
-    unisushi: false, 
-    quickuni: false, 
-    quicksushi: false,
-    sushiuni: false,
-    sushiquick: true
-}
+    
+    const borrow_token = networkConfig[chainId]["WBTC"];
+    const DECIMALS = 8
+    const aave_borrow_amount = "100.0";
+    const pool_pair = networkConfig[chainId]["Weth9"];
+    const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
+
+    const flashParams = {
+        token0: ethers.utils.getAddress(borrow_token),
+        token1: ethers.utils.getAddress(pool_pair),
+        pool1Fee: pool1Fee,
+        amount0: ethers.utils.parseUnits(aave_borrow_amount, DECIMALS),
+        pool2Fee: pool2Fee,
+        sharedAddress: ethers.utils.getAddress(shared_Address),
+        uniuniquick: false,
+        uniquick: false,
+        unisushi: false, 
+        quickuni: false, 
+        quicksushi: false,
+        sushiuni: false,
+        sushiquick: true
+    }
 
 
 // const AaveUniQuickContract = await ethers.getContractAt("IERC20", deployedContractAddress, deployer);
@@ -53,9 +52,9 @@ const flashParams = {
         const SushiswapV2Factory = networkConfig[chainId]["SushiswapV2Factory"];
         const QuickswapV2Router = networkConfig[chainId]["QuickswapV2Router"];
 
-		const contractFactory = (await ethers.getContractFactory(
+		const contractFactory = await ethers.getContractFactory(
 			"AaveUniQuick", owner
-		));
+		);
 
 		AaveUniQuickContract = await contractFactory.deploy(
 			Aave_pool_addresses_provider_v3, 
@@ -68,20 +67,27 @@ const flashParams = {
 
 		getTransactionFee(owner.address, initialMatic)
 
-		// await impersonateFundErc20(token1, WETH_WHALE, AaveUniQuickContract.address, "50.0")
+	});
 
-	})
 
 	it("Should execute sushiquick swaps", async () => {
 
-		const tx = await AaveUniQuickContract.startTransaction(flashParams)
+        let contract = await ethers.getContractAt("IERC20", borrow_token);
+
+        const initialBalance = await contract.balanceOf(AaveUniQuickContract.address)
+        console.log("Contract's initial balance is: ", initialBalance.toString())
+
+		const tx = await AaveUniQuickContract.startTransaction(flashParams);
 
 		expect(tx.hash).to.be.not.null;
 
 		expect(await provider.getTransactionReceipt(tx.hash)).to.be.not.null;
 
+        const endingBalance = await contract.balanceOf(AaveUniQuickContract.address)
+	    console.log("Contract's ending balance is: ", endingBalance.toString())
+
 		await run("balance", { account: owner.address })
-	})
+	});
 
 // 	it("Should execute kybuni flash swaps", async () => {
 

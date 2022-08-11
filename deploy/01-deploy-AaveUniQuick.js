@@ -12,7 +12,7 @@ module.exports = async ({getNamedAccounts, deployments})=>{
     //An easy way to get your parameterized constructor arguments 
     //e.g if chainId is X use Y address
     //Robust script to flip between testnet chain, mainnet chain and local chain
-  
+
     const Aave_pool_addresses_provider_v3 = networkConfig[chainId]["Aave_pool_addresses_provider_v3"];
     const UniswapV3Router = networkConfig[chainId]["UniswapV3Router"];
     const SushiswapV2Router = networkConfig[chainId]["SushiswapV2Router"];
@@ -21,7 +21,6 @@ module.exports = async ({getNamedAccounts, deployments})=>{
 
 
     const args = [Aave_pool_addresses_provider_v3, UniswapV3Router, SushiswapV2Router, SushiswapV2Factory, QuickswapV2Router];
-    // const args = [arguments];
     const AaveUniQuick = await deploy("AaveUniQuick", {
         from: deployer,
         args: args, //your constructor arguments

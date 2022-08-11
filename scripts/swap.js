@@ -11,8 +11,8 @@ const pool2Fee = 500;
 
 //Aave
 const borrow_token = networkConfig[chainId]["WBTC"];
-const DECIMALS = 8
-borrow_amount = "60"   //A string
+const DECIMALS = 8;
+const borrow_amount = "60";  //A string
 
 //Uniswap...The second token in the uniswap borrow pool
 const pool_pair = networkConfig[chainId]["Weth9"];
@@ -36,6 +36,7 @@ async function main() {
 	const {deployer} = await getNamedAccounts();
 	//This is one of the ways where hardhat-deploy is important.
 	// deployments.fixtures(["all"])
+
 	//getContract gives us the most recent deployment of a specified contract
 	const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
 	// const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
@@ -74,19 +75,17 @@ async function main() {
 	// //  // 1 ether = 1 * 10^18 wei 
 	// // console.log("flash gas ether: ", tx.gasPrice.toNumber() / 1e18)
 
-	// //Get profit
-	// const profit = endingBalance - initialBalance;
+	//Get profit
+	const profit = endingBalance - initialBalance;
 
-	// if (profit > 0) {
-	// 	console.log(`Congrats! You earned ${profit} !!`)
-	// }
+	if (profit > 0) {
+		console.log(`Congrats! You earned ${profit} !!`)
+	}
 	console.log("Success!")
 
 }
 
 
-
-//I.e get a flashloan of 200 WBTC
 main().then(() => process.exit(0)).catch(error => {
 		console.error(error);
 		process.exit(1);

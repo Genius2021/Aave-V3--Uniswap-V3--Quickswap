@@ -20,5 +20,8 @@ abstract contract FlashLoanReceiverBase is IFlashLoanReceiver {
         ADDRESSES_PROVIDER = provider;
         POOL = IPool(provider.getPool());
     }
+
+    //fallback function to receive ether
+    receive() payable external {}
 }
 
