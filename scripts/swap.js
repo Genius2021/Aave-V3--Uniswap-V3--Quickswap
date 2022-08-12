@@ -18,21 +18,21 @@ async function main() {
 	const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
 	// const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
 
+	const pool1Fee = 500;
+	const pool2Fee = 3000;
+
+	// USDC == 6 decimals, USDT == 6 decimals, WBTC == 8 decimals
+	const borrow_token = networkConfig[chainId]["USDC"];
+    const DECIMALS = 6;
+    const aave_borrow_amount = "1";
+    const pool_pair = networkConfig[chainId]["Weth9"];
+    const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
 	//Get beginning balance of token you want to flashloan
 	let contract = await ethers.getContractAt("IERC20", borrow_token);
 
 	const initialBalance = await contract.balanceOf(AaveUniQuickContract.address);
 	console.log("Contract's initial balance is: ", initialBalance.toString());
-
-	const pool1Fee = 500;
-	const pool2Fee = 3000;
-
-	const borrow_token = networkConfig[chainId]["USDC"];
-    const DECIMALS = 18;
-    const aave_borrow_amount = "100";
-    const pool_pair = networkConfig[chainId]["Weth9"];
-    const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
 	const flashparams = {
         token0: ethers.utils.getAddress(borrow_token),
@@ -41,12 +41,12 @@ async function main() {
         amount0: ethers.utils.parseUnits(aave_borrow_amount, DECIMALS), //Amount of token0 to borrow from Aave
         pool2Fee: pool2Fee,
         sharedAddress: ethers.utils.getAddress(shared_Address),
-        uniuniquick: true,
+        uniuniquick: false,
 		uniunisushi: false,
         uniquick: false,
         unisushi: false, 
         quickuni: false, 
-        quicksushi: false,
+        quicksushi: true,
         sushiuni: false,
         sushiquick: false
     }
@@ -54,6 +54,7 @@ async function main() {
 	// borrow from token0, token1 fee1 pool
 	const tx = await AaveUniQuickContract.startTransaction(flashparams);
 	// tx.wait(1)
+	console.log("The transaction hash is: ",tx.hash);
 
 	//Get ending balance of token you want to flashloan
 	const endingBalance = await contract.balanceOf(AaveUniQuickContract.address)
@@ -66,9 +67,9 @@ async function main() {
 	const profit = endingBalance - initialBalance;
 
 	if (profit > 0) {
-		console.log(`Congrats! You earned ${profit} !!`)
+		console.log(`Congrats! You earned ${profit} !!`);
 	}
-	console.log("Success!")
+	console.log("Success!");
 
 }
 

@@ -62,11 +62,12 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         uint _premium
     );
 
-    event TokensSwapped(
-        address indexed _startToken,
-        uint256 indexed _startAmount,
-        uint256 _endAmount
-    );
+    // event TokensSwapped(
+    //     address indexed _token0,
+    //     uint256 indexed _token0Out,
+    //     address indexed _token1,
+    //     uint256 _token1Out
+    // );
 
 
     function executeOperation(
@@ -91,7 +92,6 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         uint256 tokenBalance = IERC20(borrowedAsset).balanceOf(address(this));
         require(borrowedAmount > 0, "Zero balance");
         require(tokenBalance == borrowedAmount, "tokenBalance error!");
-        console.log("Successfully received flashloan asset %s for %s and premium is %s", borrowedAsset, borrowedAmount, premium);
 
         emit AaveBorrowDetails(borrowedAsset, borrowedAmount, premium);
 
@@ -99,20 +99,18 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         //If you borrowed from Aave, proceed to also start UniswapQuickswaps BUT this time, you
         //have the borrowed asset from Aave in this contract.
         startUniswapV3AndQuickSwaps(decoded); //My code passed this line!
-        console.log("About to pay back to Aave...");
+
+
 
         // At the end of your logic above, this contract owes
         // the flashloaned amounts + premiums.
         // Therefore ensure your contract has enough to repay
-        // these amounts.
-            
-
+        // these amounts
         uint256 amountToReturn = borrowedAmount.add(premium);
         require(
             IERC20(borrowedAsset).balanceOf(address(this)) >= amountToReturn,
             "Not enough amount to return loan"
         );
-        console.log("flashloan fee: ", premium);
 
         require(IERC20(borrowedAsset).approve(address(POOL), amountToReturn), "approve failed");      
         return true;
@@ -124,10 +122,6 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     function startTransaction(FlashParams memory _data) public onlyOwner{
         address _borrowAsset = _data.token0;
         uint256 _borrowAmount = _data.amount0;
-
-        console.log("These are the passed in data...");
-        console.log("Borrowed asset: %s", _borrowAsset);
-        console.log("Borrowed amount: %s", _borrowAmount);
 
         bytes memory params = abi.encode(_data);
 
@@ -169,20 +163,21 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         );
     }
 
-        function startUniswapV3AndQuickSwaps(FlashParams memory params) internal {
+    function startUniswapV3AndQuickSwaps(FlashParams memory params) internal {
 
         address token0 = params.token0;
         address token1 = params.token1;
         uint24 pool1Fee = params.pool1Fee;
         address sharedAddress = params.sharedAddress;
         uint24 pool2Fee = params.pool2Fee;
-        uint256 amount = params.amount0;
+        uint256 amount = IERC20(token0).balanceOf(address(this));
 
 
 
         uint256 finalAmountOut;
+        uint256 amountOut;
         if(params.uniuniquick == true) {
-            uint256 amountOut = multihopSwapOnUniswap(
+            amountOut = multihopSwapOnUniswap(
                 amount,
                 token0,  //input token
                 pool1Fee, //fee tier for token0 and sharedAddress pool
@@ -200,11 +195,10 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 token0); //output token
             }
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if(params.uniunisushi == true){
-             uint256 amountOut = multihopSwapOnUniswap(
+            amountOut = multihopSwapOnUniswap(
                 amount,
                 token0,  //input token
                 pool1Fee, //fee tier for token0 and sharedAddress pool
@@ -218,17 +212,15 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
 
             }
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if (params.uniquick == true) {  //uniquick just means swap on uniswap first then quickswap
-            uint256 amountOut = swapOnUniswap(
+            amountOut = swapOnUniswap(
                 amount,
                 token0,  //input token
                 token1, //output token
                 pool1Fee //The pool fee.
             );
-
 
             finalAmountOut = swapOnQuickswap(
                 amountOut,
@@ -236,11 +228,10 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 token0    //output token
             );
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if(params.unisushi == true){
-            uint256 amountOut = swapOnUniswap(
+            amountOut = swapOnUniswap(
                 amount,
                 token0,  //input token
                 token1, //output token
@@ -250,11 +241,10 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                            //From token1 => targetAsset
             finalAmountOut = startSushiswapV2(token1, amountOut, token0);
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if(params.quickuni == true) {
-            uint256 amountOut = swapOnQuickswap(
+            amountOut = swapOnQuickswap(
                 amount,
                 token0,   //input token
                 token1   //output token
@@ -267,11 +257,10 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 pool1Fee
             );
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if(params.quicksushi == true){
-            uint256 amountOut = swapOnQuickswap(
+            amountOut = swapOnQuickswap(
                 amount,
                 token0,   //input token
                 token1   //output token
@@ -280,12 +269,11 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                             //From token1 => targetAsset
             finalAmountOut = startSushiswapV2(token1, amountOut, token0);
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
 
         if(params.sushiuni == true){
                            //From token0 => targetAsset
-            uint256 amountOut = startSushiswapV2(token0, amount, token1);
+            amountOut = startSushiswapV2(token0, amount, token1);
             
             finalAmountOut = swapOnUniswap(
                 amountOut,
@@ -294,12 +282,10 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 pool1Fee
             );
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
-
         }
         
         if(params.sushiquick == true){
-            uint256 amountOut = startSushiswapV2(token0, amount, token1);
+            amountOut = startSushiswapV2(token0, amount, token1);
 
             finalAmountOut = swapOnQuickswap(
                 amountOut,
@@ -307,7 +293,6 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 token0    //output token
             );
 
-            emit TokensSwapped(token0, amount, finalAmountOut);
         }
     }
 
@@ -317,9 +302,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         address inputToken,
         address outputToken,
         uint24 poolFee
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (uint256) {
         TransferHelper.safeApprove(inputToken, address(uniswapV3Router), amountIn);
-        console.log("Currently in swapOnUniswap function...");
         
             ISwapRouter.ExactInputSingleParams memory params = 
                 ISwapRouter.ExactInputSingleParams({
@@ -334,7 +318,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
                 });
 
         //The call to `exactInputSingle` executes the swap.
-        amountOut = uniswapV3Router.exactInputSingle(params);        
+        uint256 amountOut = uniswapV3Router.exactInputSingle(params); 
+        return amountOut;       
     }   
 
 
@@ -345,9 +330,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     address sharedAddress,
     uint24 pool2Fee,
     address outputToken
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (uint256) {
         TransferHelper.safeApprove(inputToken, address(uniswapV3Router), amountIn);
-        console.log("Currently in multihopSwapOnUniswap function...");
 
         // Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and poolFees that define the pools used in the swaps.
         // The format for pool encoding is (tokenIn, fee, tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
@@ -368,8 +352,8 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             });
 
         // The call to `exactInput` executes the multihop swap.
-        amountOut = uniswapV3Router.exactInput(params);
-        
+        uint256 amountOut = uniswapV3Router.exactInput(params);
+        return amountOut;
     }
 
 
@@ -377,11 +361,9 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         uint256 amountIn,
         address inputToken,
         address outputToken
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (uint256) {
         //+-We allow the router of QuickSwapRouter to spend all our tokens that are neccesary in doing the trade:
         IERC20(inputToken).approve(address(quickRouter), amountIn);
-        console.log("Currently in swapOnQuickswap function...");
-
 
          //+-Array of the 2 Tokens Addresses:
         address[] memory path = new address[](2);
@@ -391,13 +373,14 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         path[1] = outputToken;
 
         //+-We Sell in QuickSwap the Tokens we Borrowed 
-        amountOut = quickRouter.swapExactTokensForTokens(
+        uint256 amountOut = quickRouter.swapExactTokensForTokens(
             amountIn, /**+-Amount of Tokens we are going to Sell.*/
             0, /**+-Minimum Amount of Tokens that we expect to receive in exchange for our Tokens.*/
             path, /**+-We tell SushiSwap what Token to Sell and what Token to Buy.*/
             address(this), /**+-Address of this S.C. where the Output Tokens are going to be received.*/
             block.timestamp + 200 /**+-Time Limit after which an order will be rejected by SushiSwap(It is mainly useful if you send an Order directly from your wallet).*/
         )[1];
+        return amountOut;
     }
 
     function startSushiswapV2(address _startAsset, uint256 _amount, address _targetAsset) internal returns(uint256){
@@ -409,7 +392,6 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         );
 
         require(poolAddress != address(0), "Pool not found!");
-        console.log("Currently in startSushiswapV2 function...");
 
                 
         uint256 amountOut = _swapTokens(
@@ -457,17 +439,18 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         address sell_token,
         address buy_token,
         uint256 amount
-    ) internal view returns (uint256 price) {
+    ) internal view returns (uint256) {
         address[] memory pairs = new address[](2);
         pairs[0] = sell_token;
         pairs[1] = buy_token;
 
         //The return price is in Eth...So you can always multiply by 10**18 to convert to wei
-        price = IUniswapV2Router02(routerAddress).getAmountsOut(
+        uint256 price = IUniswapV2Router02(routerAddress).getAmountsOut(
             amount,
             pairs
         )[1];
 
+        return price;
     }
 }
 
