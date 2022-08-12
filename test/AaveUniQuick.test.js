@@ -27,6 +27,7 @@ describe("AaveUniQuick", async () => {
         pool2Fee: pool2Fee,
         sharedAddress: ethers.utils.getAddress(shared_Address),
         uniuniquick: false,
+        uniunisushi: false,
         uniquick: false,
         unisushi: false, 
         quickuni: false, 
@@ -34,9 +35,6 @@ describe("AaveUniQuick", async () => {
         sushiuni: false,
         sushiquick: true
     }
-
-
-// const AaveUniQuickContract = await ethers.getContractAt("IERC20", deployedContractAddress, deployer);
 
 
 	before(async () => {

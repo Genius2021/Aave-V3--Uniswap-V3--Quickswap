@@ -5,29 +5,6 @@ const chainId = network.config.chainId;
 //Note: Uniswap fee tiers...0.05%, 0.30%, 1%
 //i.e 500, 3000, 10000 respectively
 
-const pool1Fee = 3000;
-const pool2Fee = 500;
-
-
-//Aave
-const borrow_token = networkConfig[chainId]["WBTC"];
-const DECIMALS = 8;
-const borrow_amount = "60";  //A string
-
-//Uniswap...The second token in the uniswap borrow pool
-const pool_pair = networkConfig[chainId]["Weth9"];
-const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
-
-
-// const aave_borrow_amount = ethers.utils.parseEther("0.00000000000000005");
-const aave_borrow_amount = ethers.utils.parseUnits(borrow_amount, DECIMALS);
-const isUniUniQuick = false;
-const isUniQuick = false;
-const isUniSushi = false;
-const isQuickUni = false;
-const isQuickSushi = false;
-const isSushiUni = false;
-const isSushiQuick = true;
 
 async function main() {
 
@@ -45,24 +22,34 @@ async function main() {
 	//Get beginning balance of token you want to flashloan
 	let contract = await ethers.getContractAt("IERC20", borrow_token);
 
-	const initialBalance = await contract.balanceOf(AaveUniQuickContract.address)
-	console.log("Contract's initial balance is: ", initialBalance.toString())
+	const initialBalance = await contract.balanceOf(AaveUniQuickContract.address);
+	console.log("Contract's initial balance is: ", initialBalance.toString());
+
+	const pool1Fee = 500;
+	const pool2Fee = 3000;
+
+	const borrow_token = networkConfig[chainId]["USDC"];
+    const DECIMALS = 18;
+    const aave_borrow_amount = "100";
+    const pool_pair = networkConfig[chainId]["Weth9"];
+    const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
 	const flashparams = {
-		token0: ethers.utils.getAddress(borrow_token), 
-		token1: ethers.utils.getAddress(pool_pair), 
-		pool1Fee: pool1Fee, //Make sure to borrow from a lower fee-tier pool and sell at a higher fee-tier pool 
-		amount0: aave_borrow_amount, //Amount of token0 to borrow from Aave
-		pool2Fee: pool2Fee,
-		sharedAddress: ethers.utils.getAddress(shared_Address),
-		uniuniquick: isUniUniQuick,
-		uniquick: isUniQuick,
-		unisushi: isUniSushi, 
-		quickuni: isQuickUni, 
-		quicksushi: isQuickSushi,
-		sushiuni: isSushiUni,
-		sushiquick: isSushiQuick
-	};
+        token0: ethers.utils.getAddress(borrow_token),
+        token1: ethers.utils.getAddress(pool_pair),
+        pool1Fee: pool1Fee,  //Make sure to borrow from a lower fee-tier pool and sell at a higher fee-tier pool
+        amount0: ethers.utils.parseUnits(aave_borrow_amount, DECIMALS), //Amount of token0 to borrow from Aave
+        pool2Fee: pool2Fee,
+        sharedAddress: ethers.utils.getAddress(shared_Address),
+        uniuniquick: true,
+		uniunisushi: false,
+        uniquick: false,
+        unisushi: false, 
+        quickuni: false, 
+        quicksushi: false,
+        sushiuni: false,
+        sushiquick: false
+    }
 
 	// borrow from token0, token1 fee1 pool
 	const tx = await AaveUniQuickContract.startTransaction(flashparams);
