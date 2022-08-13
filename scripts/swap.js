@@ -1,4 +1,4 @@
-const { ethers, network, deployments, getNamedAccounts } = require("hardhat");
+const { ethers, network, getNamedAccounts } = require("hardhat");
 const { networkConfig } = require("../networkConfig");
 const chainId = network.config.chainId;
 
@@ -18,18 +18,35 @@ async function main() {
 	const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
 	// const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
 
-	const pool1Fee = 500;
-	const pool2Fee = 3000;
+	const pool1Fee = 3000;
+	const pool2Fee = 500;
 
 	// USDC == 6 decimals, USDT == 6 decimals, WBTC == 8 decimals
-	const borrow_token = networkConfig[chainId]["WBTC"];
-    const DECIMALS = 8;
-    const aave_borrow_amount = "100";
-    const pool_pair = networkConfig[chainId]["Weth9"];
+	const borrow_token = networkConfig[chainId]["Weth9"];
+    const DECIMALS = 18;
+    const aave_borrow_amount = "1000";
+    const pool_pair = networkConfig[chainId]["USDT"];
+	const pool_pair_decimal = 1000000 //6 decimals for usdc
     const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
+    const QuickswapV2RouterAddress = networkConfig[chainId]["QuickswapV2Router"]; 
+    const SushiswapV2RouterAddress = networkConfig[chainId]["SushiswapV2Router"]; 
+    const UniswapV3QuoterAddress = networkConfig[chainId]["UniswapV3Quoter"]; 
 
 	//Get beginning balance of token you want to flashloan
 	let contract = await ethers.getContractAt("IERC20", borrow_token);
+	let QuickswapV2Router = await ethers.getContractAt("IUniswapV2Router02", QuickswapV2RouterAddress);
+	let SushiswapV2Router = await ethers.getContractAt("IUniswapV2Router02", SushiswapV2RouterAddress);
+	let UniswapV3Quoter = await ethers.getContractAt("IQuoter", UniswapV3QuoterAddress);
+
+	let quickswapPrice = await QuickswapV2Router.getAmountsOut(ethers.utils.parseUnits("1", 18), [borrow_token, pool_pair])
+	let sushiswapPrice = await SushiswapV2Router.getAmountsOut(ethers.utils.parseUnits("1", 18), [borrow_token, pool_pair])
+	console.log("Quickswap Price",quickswapPrice[1].toString()/pool_pair_decimal)
+	console.log("Sushiswap Price",sushiswapPrice[1].toString()/pool_pair_decimal)
+
+
+	// console.log("---------V3 Price below--------");
+	// let uniswapV3PriceOut = await UniswapV3Quoter.quoteExactInputSingle(borrow_token,pool_pair,pool1Fee,ethers.utils.parseUnits("1", 8), 0)
+	// console.log("uniswapV3PriceOut: ", uniswapV3PriceOut)
 
 	const initialBalance = await contract.balanceOf(AaveUniQuickContract.address);
 	console.log("Contract's initial balance is: ", initialBalance.toString());
@@ -45,8 +62,8 @@ async function main() {
 		uniunisushi: false,
         uniquick: false,
         unisushi: false, 
-        quickuni: true, 
-        quicksushi: false,
+        quickuni: false, 
+        quicksushi: true,
         sushiuni: false,
         sushiquick: false
     }

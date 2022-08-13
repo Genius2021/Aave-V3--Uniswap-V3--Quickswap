@@ -25,6 +25,7 @@ const networkConfig = {
         Aave_pool_addresses_provider_v3: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
         UniswapV3Router: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         UniswapV3Factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+        UniswapV3Quoter: "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
         SushiswapV2Factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
         SushiswapV2Router: "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
         //Note: Quickswap is a fork of Uniswap V2 but on the Polygon chain

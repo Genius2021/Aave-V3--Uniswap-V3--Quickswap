@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./utils/FlashLoanReceiverBase.sol";
 import "./utils/Withdrawable.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IUniswapV2Factory.sol";
@@ -20,20 +21,23 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     //Note: Quickswap and Sushiswap are a fork of Uniswap. So the API are essentially the same.
     IUniswapV2Router02 public immutable quickRouter;
     ISwapRouter public immutable uniswapV3Router;
-    address immutable sushiswapRouterAddress;
+    // IQuoter public immutable uniswapV3Quoter;
+    IUniswapV2Router02 public immutable sushiRouter;
     address immutable sushiswapfactoryAddress;
 
     constructor( 
     IPoolAddressesProvider _aaveAddressProvider,
     address _uniswapV3Router,
-    address _sushiswapRouter,
+    address _sushiswapRouterAddress,
     address _sushiswapfactory,
     address _quickswapV2RouterAddress
+    // address _uniswapV3QuoterAddress
     ) 
     FlashLoanReceiverBase(_aaveAddressProvider) {
         uniswapV3Router = ISwapRouter(_uniswapV3Router);
+        // uniswapV3Quoter = IQuoter(_uniswapV3QuoterAddress);
         quickRouter = IUniswapV2Router02(_quickswapV2RouterAddress);
-        sushiswapRouterAddress = _sushiswapRouter;
+        sushiRouter = IUniswapV2Router02(_sushiswapRouterAddress);
         sushiswapfactoryAddress = _sushiswapfactory;
     }
 
@@ -206,7 +210,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             );
 
             if(token0 != token1){
-                finalAmountOut = startSushiswapV2(token1, amountOut, token0);
+                finalAmountOut = swapOnSushiswapV2(token1, amountOut, token0);
 
             }
 
@@ -237,7 +241,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             );
 
                            //From token1 => targetAsset
-            finalAmountOut = startSushiswapV2(token1, amountOut, token0);
+            finalAmountOut = swapOnSushiswapV2(token1, amountOut, token0);
 
         }
 
@@ -265,13 +269,13 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             );
 
                             //From token1 => targetAsset
-            finalAmountOut = startSushiswapV2(token1, amountOut, token0);
+            finalAmountOut = swapOnSushiswapV2(token1, amountOut, token0);
 
         }
 
         if(params.sushiuni == true){
                            //From token0 => targetAsset
-            amountOut = startSushiswapV2(token0, amount, token1);
+            amountOut = swapOnSushiswapV2(token0, amount, token1);
             
             finalAmountOut = swapOnUniswap(
                 amountOut,
@@ -283,7 +287,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         }
         
         if(params.sushiquick == true){
-            amountOut = startSushiswapV2(token0, amount, token1);
+            amountOut = swapOnSushiswapV2(token0, amount, token1);
 
             finalAmountOut = swapOnQuickswap(
                 amountOut,
@@ -370,10 +374,17 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         path[0] = inputToken;  //path[0] is the token we want to sell
         path[1] = outputToken;
 
+        uint256 amountOutMin = (_getPrice(
+            address(quickRouter),
+            inputToken,
+            outputToken,
+            amountIn
+        ) * 95) / 100;
+
         //+-We Sell in QuickSwap the Tokens we Borrowed 
         uint256 amountOut = quickRouter.swapExactTokensForTokens(
             amountIn, /**+-Amount of Tokens we are going to Sell.*/
-            0, /**+-Minimum Amount of Tokens that we expect to receive in exchange for our Tokens.*/
+            amountOutMin, /**+-Minimum Amount of Tokens that we expect to receive in exchange for our Tokens.*/
             path, /**+-We tell SushiSwap what Token to Sell and what Token to Buy.*/
             address(this), /**+-Address of this S.C. where the Output Tokens are going to be received.*/
             block.timestamp + 200 /**+-Time Limit after which an order will be rejected by SushiSwap(It is mainly useful if you send an Order directly from your wallet).*/
@@ -381,7 +392,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         return amountOut;
     }
 
-    function startSushiswapV2(address _startAsset, uint256 _amount, address _targetAsset) internal returns(uint256){
+    function swapOnSushiswapV2(address _startAsset, uint256 _amount, address _targetAsset) internal returns(uint256){
 
         // Get pool address and check if it exists
         address poolAddress = IUniswapV2Factory(sushiswapfactoryAddress).getPair(
@@ -391,48 +402,32 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
 
         require(poolAddress != address(0), "Pool not found!");
 
-                
-        uint256 amountOut = _swapTokens(
-            _amount,
-            sushiswapRouterAddress,
-            _startAsset,
-            _targetAsset
-        );
-
-        return amountOut;
-    }
-
-     function _swapTokens(
-            uint256 amountIn,
-            address routerAddress,
-            address sell_token,
-            address buy_token
-        ) internal returns (uint256) {
-        IERC20(sell_token).approve(routerAddress, amountIn);
+        IERC20(_startAsset).approve(address(sushiRouter), _amount);
 
         uint256 amountOutMin = (_getPrice(
-            routerAddress,
-            sell_token,
-            buy_token,
-            amountIn
+            address(sushiRouter),
+            _startAsset,
+            _targetAsset,
+            _amount
         ) * 95) / 100; //Meaning I am expecting to receive at least 95% of the price out.
 
         address[] memory path = new address[](2);
-        path[0] = sell_token;
-        path[1] = buy_token;
+        path[0] = _startAsset;
+        path[1] = _targetAsset;
 
-        uint256 amountReceived = IUniswapV2Router02(routerAddress)
-            .swapExactTokensForTokens(
-                amountIn, /* Amount of Tokens we are going to Sell. */
+        uint256 amountOut = sushiRouter.swapExactTokensForTokens(
+                _amount, /* Amount of Tokens we are going to Sell. */
                 amountOutMin, /* Minimum Amount of Tokens that we expect to receive in exchange for our Tokens. */
                 path, /* We tell SushiSwap what token to sell and what token to Buy. */
                 address(this), /* Address of where the Output Tokens are going to be received. i.e this contract address(this) */
                 block.timestamp + 200 /* Time Limit after which an order will be rejected by SushiSwap(It is mainly useful if you send an Order directly from your wallet). */
             )[1];
-        return amountReceived;
+
+        return amountOut;
     }
 
-     function _getPrice(
+
+    function _getPrice(
         address routerAddress,
         address sell_token,
         address buy_token,
