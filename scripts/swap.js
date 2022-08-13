@@ -22,9 +22,9 @@ async function main() {
 	const pool2Fee = 3000;
 
 	// USDC == 6 decimals, USDT == 6 decimals, WBTC == 8 decimals
-	const borrow_token = networkConfig[chainId]["USDC"];
-    const DECIMALS = 6;
-    const aave_borrow_amount = "1";
+	const borrow_token = networkConfig[chainId]["WBTC"];
+    const DECIMALS = 8;
+    const aave_borrow_amount = "100";
     const pool_pair = networkConfig[chainId]["Weth9"];
     const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
 
@@ -45,8 +45,8 @@ async function main() {
 		uniunisushi: false,
         uniquick: false,
         unisushi: false, 
-        quickuni: false, 
-        quicksushi: true,
+        quickuni: true, 
+        quicksushi: false,
         sushiuni: false,
         sushiquick: false
     }

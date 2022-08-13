@@ -101,14 +101,12 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         startUniswapV3AndQuickSwaps(decoded); //My code passed this line!
 
 
-
         // At the end of your logic above, this contract owes
         // the flashloaned amounts + premiums.
         // Therefore ensure your contract has enough to repay
         // these amounts
         uint256 amountToReturn = borrowedAmount.add(premium);
-        require(
-            IERC20(borrowedAsset).balanceOf(address(this)) >= amountToReturn,
+        require(IERC20(borrowedAsset).balanceOf(address(this)) >= amountToReturn,
             "Not enough amount to return loan"
         );
 
