@@ -18,7 +18,7 @@ module.exports = async ({getNamedAccounts, deployments})=>{
     const SushiswapV2Router = networkConfig[chainId]["SushiswapV2Router"];
     const SushiswapV2Factory = networkConfig[chainId]["SushiswapV2Factory"];
     const QuickswapV2Router = networkConfig[chainId]["QuickswapV2Router"];
-    // const UniswapV3Quoter = networkConfig[chainId]["UniswapV3Quoter"];
+    const QuickswapV2Factory = networkConfig[chainId]["QuickswapV2Factory"];
 
 
     const args = [
@@ -27,7 +27,7 @@ module.exports = async ({getNamedAccounts, deployments})=>{
         SushiswapV2Router, 
         SushiswapV2Factory, 
         QuickswapV2Router, 
-        // UniswapV3Quoter
+        QuickswapV2Factory
     ];
     const AaveUniQuick = await deploy("AaveUniQuick", {
         from: deployer,

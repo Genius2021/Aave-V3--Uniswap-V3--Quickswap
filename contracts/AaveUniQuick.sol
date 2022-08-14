@@ -24,21 +24,22 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
     // IQuoter public immutable uniswapV3Quoter;
     IUniswapV2Router02 public immutable sushiRouter;
     address immutable sushiswapfactoryAddress;
+    address immutable quickswapfactoryAddress;
 
     constructor( 
     IPoolAddressesProvider _aaveAddressProvider,
     address _uniswapV3Router,
     address _sushiswapRouterAddress,
     address _sushiswapfactory,
-    address _quickswapV2RouterAddress
-    // address _uniswapV3QuoterAddress
+    address _quickswapV2RouterAddress,
+    address _quickswapfactory
     ) 
     FlashLoanReceiverBase(_aaveAddressProvider) {
         uniswapV3Router = ISwapRouter(_uniswapV3Router);
-        // uniswapV3Quoter = IQuoter(_uniswapV3QuoterAddress);
         quickRouter = IUniswapV2Router02(_quickswapV2RouterAddress);
         sushiRouter = IUniswapV2Router02(_sushiswapRouterAddress);
         sushiswapfactoryAddress = _sushiswapfactory;
+        quickswapfactoryAddress = _quickswapfactory;
     }
 
 
@@ -173,7 +174,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         address sharedAddress = params.sharedAddress;
         uint24 pool2Fee = params.pool2Fee;
         uint256 amount = IERC20(token0).balanceOf(address(this));
-
+        require(amount > 0, "Token bal not positive");
 
 
         uint256 finalAmountOut;
@@ -364,15 +365,15 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
         address inputToken,
         address outputToken
     ) internal returns (uint256) {
+        //   // Get pool address and check if it exists
+        address poolAddress = IUniswapV2Factory(quickswapfactoryAddress).getPair(
+            inputToken,
+            outputToken
+        );
+
+        require(poolAddress != address(0), "Pool not found!");
         //+-We allow the router of QuickSwapRouter to spend all our tokens that are neccesary in doing the trade:
         IERC20(inputToken).approve(address(quickRouter), amountIn);
-
-         //+-Array of the 2 Tokens Addresses:
-        address[] memory path = new address[](2);
-
-        //+-Defines the Direction of the Trade (From Token0 to Token1 or vice versa):
-        path[0] = inputToken;  //path[0] is the token we want to sell
-        path[1] = outputToken;
 
         uint256 amountOutMin = (_getPrice(
             address(quickRouter),
@@ -380,6 +381,13 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             outputToken,
             amountIn
         ) * 95) / 100;
+
+        //+-Array of the 2 Tokens Addresses:
+        address[] memory path = new address[](2);
+        //+-Defines the Direction of the Trade (From Token0 to Token1 or vice versa):
+        path[0] = inputToken;  //path[0] is the token we want to sell
+        path[1] = outputToken;
+
 
         //+-We Sell in QuickSwap the Tokens we Borrowed 
         uint256 amountOut = quickRouter.swapExactTokensForTokens(
@@ -389,6 +397,7 @@ contract AaveUniQuick is FlashLoanReceiverBase, Withdrawable {
             address(this), /**+-Address of this S.C. where the Output Tokens are going to be received.*/
             block.timestamp + 200 /**+-Time Limit after which an order will be rejected by SushiSwap(It is mainly useful if you send an Order directly from your wallet).*/
         )[1];
+        
         return amountOut;
     }
 

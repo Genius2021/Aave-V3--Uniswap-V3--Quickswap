@@ -8,15 +8,15 @@ const chainId = network.config.chainId;
 
 async function main() {
 
-	// let deployedContractAddress = "0x0d51a0aa274925b43367e77cb063f3405f469ddf"
+	let deployedContractAddress = "0x8e298bf8e95e56ee5ffe1f07bc548e4d702e245d"
 	//const [account0] = await ethers.getSigners(); //Gets the accounts array for each network..Also works
 	const {deployer} = await getNamedAccounts();
 	//This is one of the ways where hardhat-deploy is important.
 	// deployments.fixtures(["all"])
 
 	//getContract gives us the most recent deployment of a specified contract
-	const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
-	// const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
+	// const AaveUniQuickContract = await ethers.getContract("AaveUniQuick", deployer); 
+	const AaveUniQuickContract = await ethers.getContractAt("AaveUniQuick", deployedContractAddress, deployer);
 
 	const pool1Fee = 3000;
 	const pool2Fee = 500;
