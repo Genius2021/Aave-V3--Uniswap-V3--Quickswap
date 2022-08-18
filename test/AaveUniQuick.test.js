@@ -49,6 +49,7 @@ describe("AaveUniQuick", async () => {
         const SushiswapV2Router = networkConfig[chainId]["SushiswapV2Router"];
         const SushiswapV2Factory = networkConfig[chainId]["SushiswapV2Factory"];
         const QuickswapV2Router = networkConfig[chainId]["QuickswapV2Router"];
+        const QuickswapV2Factory = networkConfig[chainId]["QuickswapV2Factory"];
 
 		const contractFactory = await ethers.getContractFactory(
 			"AaveUniQuick", owner
@@ -59,10 +60,11 @@ describe("AaveUniQuick", async () => {
             UniswapV3Router, 
             SushiswapV2Router, 
             SushiswapV2Factory,
-            QuickswapV2Router
+            QuickswapV2Router,
+            QuickswapV2Factory
 		);
 		await AaveUniQuickContract.deployed();
-
+        console.log("Deployed contract to: ", AaveUniQuickContract.address);
 		getTransactionFee(owner.address, initialMatic)
 
 	});
@@ -87,52 +89,4 @@ describe("AaveUniQuick", async () => {
 		await run("balance", { account: owner.address })
 	});
 
-// 	it("Should execute kybuni flash swaps", async () => {
-
-// 		const tx = await contract.initFlash({
-// 			token0: ethers.utils.getAddress(baseTokenAddress),
-// 			token1: ethers.utils.getAddress(middleTokenAddress),
-// 			token2: ethers.utils.getAddress(swapTokenAddress),
-// 			fee1: 500,
-// 			amount0: ethers.utils.parseUnits("100.0", DECIMALS),
-// 			amount1: 0,
-// 			fee2: 500,
-// 			unikyb: false,
-// 		})
-
-// 		expect(tx.hash).to.be.not.null;
-
-// 		expect(await provider.getTransactionReceipt(tx.hash)).to.be.not.null;
-
-// 		await run("balance", { account: owner.address })
-// 	})
-
-// 	it('Should return the address of owner.', async () => {
-// 		expect(await contract.owner()).to.equal(owner.address)
-// 	})
-
-// 	it('Should successfully send erc20 tokens', async () => {
-
-// 		const initialBalance = await token1.balanceOf(addr1.address)
-
-// 		await contract.withdrawToken(
-// 			ethers.utils.getAddress(baseTokenAddress),
-// 			addr1.address,
-// 			1000
-// 		)
-
-// 		const expectedBalance = initialBalance.add(ethers.BigNumber.from(1000))
-// 		expect(await token1.balanceOf(addr1.address)).to.equal(expectedBalance);
-
-// 	})
-
-// 	it("Should be reverted because it is not called by the owner", async () => {
-
-// 		expect(contract.connect(addr1).withdrawToken(
-// 			ethers.utils.getAddress(baseTokenAddress),
-// 			addr1.address,
-// 			1000
-// 		))
-// 			.to.be.reverted;
-// 	});
 })

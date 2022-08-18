@@ -9,7 +9,9 @@ require("./tasks/accounts");
 require("./tasks/balance");
 require("./tasks/block-number");
 
-const { ALCHEMY_API_KEY, 
+const { 
+  ALCHEMY_POLYGON_MAINNET_API_KEY, 
+  ALCHEMY_POLYGON_MUMBAI_API_KEY,
   INFURA_PROJECT_ID, 
   PRIVATE_KEY, 
   ETHERSCAN_API_KEY, 
@@ -57,9 +59,18 @@ module.exports = {
       blockConfirmations: 5
     },
     polygon: {
-      url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_POLYGON_MAINNET_API_KEY}`,
       accounts: [PRIVATE_KEY],
       chainId: 137,
+      gas: 21000000,
+      gasPrice: 35000000000, //35 gwei
+      blockConfirmations: 5,
+      saveDeployments: true
+    },
+    mumbai: {
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_POLYGON_MUMBAI_API_KEY}`,
+      accounts: [PRIVATE_KEY],
+      chainId: 80001,
       gas: 21000000,
       gasPrice: 35000000000, //35 gwei
       blockConfirmations: 5,
@@ -80,7 +91,7 @@ module.exports = {
     hardhat: {
       chainId: 31337,
       forking: {
-        url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+        url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_POLYGON_MAINNET_API_KEY}`,
         blockNumber: 31744248
       }
     }

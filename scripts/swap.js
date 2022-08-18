@@ -22,9 +22,9 @@ async function main() {
 	const pool2Fee = 500;
 
 	// USDC == 6 decimals, USDT == 6 decimals, WBTC == 8 decimals
-	const borrow_token = networkConfig[chainId]["Weth9"];
+	const borrow_token = networkConfig[chainId]["WETH"];
     const DECIMALS = 18;
-    const aave_borrow_amount = "1000";
+    const aave_borrow_amount = "0.01";
     const pool_pair = networkConfig[chainId]["USDT"];
 	const pool_pair_decimal = 1000000 //6 decimals for usdc
     const shared_Address = networkConfig[chainId]["USDT"]; //For multihop swaps
@@ -40,8 +40,8 @@ async function main() {
 
 	let quickswapPrice = await QuickswapV2Router.getAmountsOut(ethers.utils.parseUnits("1", 18), [borrow_token, pool_pair])
 	let sushiswapPrice = await SushiswapV2Router.getAmountsOut(ethers.utils.parseUnits("1", 18), [borrow_token, pool_pair])
-	console.log("Quickswap Price",quickswapPrice[1].toString()/pool_pair_decimal)
-	console.log("Sushiswap Price",sushiswapPrice[1].toString()/pool_pair_decimal)
+	console.log("Quickswap Price", quickswapPrice[1].toString()/pool_pair_decimal)
+	console.log("Sushiswap Price", sushiswapPrice[1].toString()/pool_pair_decimal)
 
 
 	// console.log("---------V3 Price below--------");

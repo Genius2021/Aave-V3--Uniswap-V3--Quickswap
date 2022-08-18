@@ -45,8 +45,7 @@ module.exports = async ({getNamedAccounts, deployments})=>{
     }
 
     console.log("Deployed contract to: ", AaveUniQuick.address);
-    log("______________________________________")
-
+    log("______________________________________");
 }
 
 module.exports.tags = ["all", "AaveUniQuick"]
